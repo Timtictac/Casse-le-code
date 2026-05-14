@@ -15,7 +15,6 @@ Comme `index.html` charge `jeu.js` comme **module ES**, ouvrir le fichier
 directement (`file://`) ne suffit pas — il faut un petit serveur HTTP :
 
 ```sh
-cd web
 python3 -m http.server 8000
 ```
 

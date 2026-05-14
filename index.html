@@ -267,6 +267,84 @@ body::before {
 .player-row {
   display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
 }
+
+/* Mobile : layout vertical, main IA masquée, main joueur en bas */
+@media (max-width: 720px) {
+  .game {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    gap: 12px;
+    padding: 12px 12px 0;
+    max-width: 100%;
+  }
+  .header { grid-column: 1; padding-bottom: 10px; }
+  .header .logo { font-size: 14px; }
+
+  /* Main IA masquée sur mobile */
+  .ia-zone { display: none; }
+
+  /* Historique en haut, prend l'espace disponible */
+  .history-zone {
+    grid-column: 1; grid-row: 2;
+    min-height: 0;
+    max-height: none;
+  }
+  .history-scroll { max-height: none; }
+
+  /* Questions juste au-dessus de la main */
+  .center-zone {
+    grid-column: 1; grid-row: 3;
+  }
+  .questions-grid { gap: 8px; }
+  .qcard { padding: 9px 10px; font-size: 12px; min-height: 44px; }
+
+  /* Main joueur fixée en bas */
+  .player-zone {
+    grid-column: 1; grid-row: 4;
+    position: sticky; bottom: 0;
+    background: var(--bg);
+    padding: 10px 0 12px;
+    border-top: 1px solid var(--border);
+    margin: 0 -12px;
+    padding-left: 12px; padding-right: 12px;
+    z-index: 10;
+  }
+  .player-row {
+    flex-direction: column; align-items: stretch; gap: 10px;
+  }
+  .player-row .cartes-rangée {
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .player-row .btn { justify-content: center; }
+
+  /* Cartes du joueur : forcer une seule ligne, tailles fluides */
+  .player-row .card {
+    width: calc((100vw - 24px - 4 * 6px) / 5);
+    max-width: 64px;
+    height: auto;
+    aspect-ratio: 72 / 100;
+  }
+  .player-row .card .val { font-size: clamp(1em, 5.5vw, 1.9em); }
+  .player-row .card .coul { font-size: clamp(0.45em, 1.6vw, 0.6em); }
+
+  /* Autres cartes (modale, fin de partie) : version compacte standard */
+  .card { width: 56px; height: 80px; }
+  .card .val { font-size: 1.7em; }
+
+  /* Modale plein écran-ish */
+  .modal { padding: 20px 16px; max-height: 92vh; overflow-y: auto; }
+  .modal > div[style*="display:flex"] { flex-wrap: wrap; }
+  .modal .guess-slot { padding: 8px 4px; flex: 1 1 30%; min-width: 90px; }
+  .modal .guess-slot select { font-size: 10px; padding: 3px 4px; }
+
+  .endgame-title { font-size: 36px; }
+}
+
+@media (max-width: 420px) {
+  .questions-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
