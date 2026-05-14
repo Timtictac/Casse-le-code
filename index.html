@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casse le Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #18160f; --bg2: #201d14; --bg3: #2a2619;
+  --surface: #2e2a1c; --surface2: #38331f;
+  --border: #4a4430; --border2: #5e5840;
+  --text: #f0e8d0; --text2: #a89870; --text3: #6e6040;
+  --accent: #3d6b42; --accent-lt: #6ab872;
+  --gold: #c4a44a; --gold-lt: #e8c870;
+  --red: #9b3a2a; --red-lt: #d45a40;
+  --card-noir-bg: #1a1714; --card-noir-text: #e8ddc0; --card-noir-bdr: #4a4030;
+  --card-blanc-bg: #f5f0e2; --card-blanc-text: #1a1714; --card-blanc-bdr: #ccc0a0;
+  --card-vert-bg: #1e3d22; --card-vert-text: #a8e0b0; --card-vert-bdr: #3d6b42;
+}
+
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* Cartes */
+.card {
+  border-radius: 10px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-weight: 500;
+  user-select: none; flex-shrink: 0;
+  width: 72px; height: 100px;
+  transition: transform .15s;
+}
+.card-sm { width: 52px; height: 72px; border-radius: 7px; }
+.card-xs { width: 40px; height: 56px; border-radius: 5px; }
+.card .val { font-size: 2.2em; line-height: 1; }
+.card-sm .val { font-size: 1.5em; }
+.card-xs .val { font-size: 1.1em; }
+.card .coul { font-size: 0.6em; letter-spacing: 0.08em; margin-top: 3px; opacity: 0.7; }
+.card-N { background: var(--card-noir-bg); color: var(--card-noir-text); border: 1.5px solid var(--card-noir-bdr); box-shadow: 0 2px 8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04); }
+.card-B { background: var(--card-blanc-bg); color: var(--card-blanc-text); border: 1.5px solid var(--card-blanc-bdr); box-shadow: 0 2px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.6); }
+.card-V { background: var(--card-vert-bg); color: var(--card-vert-text); border: 1.5px solid var(--card-vert-bdr); box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 12px rgba(61,107,66,.2); }
+.card-cachée {
+  background: repeating-linear-gradient(135deg, #26231a 0 6px, #2e2a1c 6px 12px);
+  border: 1.5px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+
+/* Questions */
+.qcard {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 12px 14px; cursor: pointer;
+  transition: background .12s, border-color .12s, transform .12s, box-shadow .12s;
+  position: relative; overflow: hidden;
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  min-height: 56px; display: flex; align-items: center;
+}
+.qcard::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+.qcard:hover {
+  background: var(--surface); border-color: var(--gold); transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+.qcard:hover::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.qcard.disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+
+/* Historique */
+.hist-item {
+  border-left: 2px solid var(--border);
+  padding: 6px 10px; margin-bottom: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  animation: fadeSlide .3s ease;
+}
+.hist-item.humain { border-left-color: var(--gold); }
+.hist-item.ia { border-left-color: var(--accent); }
+.hist-qui { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--text3); }
+.hist-q { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+.hist-r { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text); font-weight: 500; }
+.hist-h { font-size: 10px; color: var(--accent-lt); font-style: italic; }
+
+@keyframes fadeSlide { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+
+/* Badge de tour */
+.turn-badge {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.turn-badge.humain { background: rgba(196,164,74,.12); border: 1px solid rgba(196,164,74,.35); color: var(--gold-lt); }
+.turn-badge.ia { background: rgba(61,107,66,.12); border: 1px solid rgba(61,107,66,.35); color: var(--accent-lt); }
+.turn-dot { width: 7px; height: 7px; border-radius: 50%; animation: pulse 1.5s ease-in-out infinite; }
+.turn-badge.humain .turn-dot { background: var(--gold); }
+.turn-badge.ia .turn-dot { background: var(--accent-lt); }
+
+/* Boutons */
+.btn {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 9px 20px; border-radius: 6px; border: none;
+  cursor: pointer; transition: all .12s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--gold); color: #18160f; }
+.btn-primary:hover { background: var(--gold-lt); box-shadow: 0 4px 16px rgba(196,164,74,.3); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+
+/* Modale */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,9,6,.85);
+  backdrop-filter: blur(4px); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+}
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 28px 32px;
+  width: 640px; max-width: 96vw;
+  box-shadow: 0 32px 80px rgba(0,0,0,.7);
+  animation: slideUp .22s ease;
+}
+.modal-title { font-family: 'Libre Baskerville', serif; font-size: 20px; margin-bottom: 6px; }
+.modal-subtitle { font-size: 12px; color: var(--text3); margin-bottom: 22px; }
+
+.guess-slot {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  flex: 1; transition: border-color .12s;
+}
+.guess-slot.active { border-color: var(--gold); }
+.guess-slot.error { border-color: var(--red-lt); }
+.guess-slot label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); }
+.guess-slot select {
+  width: 100%; background: var(--bg3); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 6px; font-size: 11px;
+  font-family: 'DM Mono', monospace; outline: none; cursor: pointer;
+}
+.guess-slot select:focus { border-color: var(--gold); }
+.constraint-error {
+  font-size: 10px; color: var(--red-lt);
+  padding: 5px 10px; background: rgba(155,58,42,.12);
+  border-radius: 4px; border: 1px solid rgba(155,58,42,.3);
+}
+
+/* Fin de partie */
+.endgame {
+  position: fixed; inset: 0;
+  background: rgba(10,9,6,.92); backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px; animation: fadeIn .4s ease;
+}
+.endgame-title { font-family: 'Libre Baskerville', serif; font-size: 48px; letter-spacing: -.02em; }
+.endgame-title.win { color: var(--gold-lt); }
+.endgame-title.lose { color: var(--red-lt); }
+.endgame-subtitle { font-size: 16px; color: var(--text2); }
+
+/* Toast */
+.toast {
+  position: fixed; top: 80px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--gold);
+  border-radius: 8px; padding: 12px 24px;
+  font-size: 13px; z-index: 50;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  min-width: 260px; text-align: center;
+  animation: fadeIn .25s ease;
+}
+.toast strong { color: var(--gold-lt); font-family: 'DM Mono', monospace; font-size: 16px; }
+
+/* Layout */
+.game {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 18px;
+  width: 100%; max-width: 1280px;
+  margin: 0 auto; padding: 18px 28px;
+  flex: 1;
+}
+.header {
+  grid-column: 1 / 3;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Libre Baskerville', serif; font-size: 16px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text2);
+}
+.logo span { color: var(--gold); }
+
+.zone-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text3); display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.zone-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.zone-label .stat { color: var(--text2); font-family: 'DM Mono', monospace; letter-spacing: 0; text-transform: none; }
+
+.ia-zone { grid-column: 1; grid-row: 2; }
+.center-zone { grid-column: 1; grid-row: 3; }
+.player-zone { grid-column: 1; grid-row: 4; }
+
+.cartes-rangée { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.questions-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.history-zone {
+  grid-column: 2; grid-row: 2 / 5;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex; flex-direction: column;
+  overflow: hidden; min-height: 400px;
+}
+.history-header {
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text3);
+}
+.history-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.history-tab {
+  flex: 1; padding: 8px 10px; text-align: center;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text3); cursor: pointer; background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  font-family: 'DM Sans', sans-serif; font-weight: 600;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.history-tab:hover { color: var(--text2); background: var(--bg3); }
+.history-tab.active { color: var(--text); border-bottom-color: var(--gold); }
+.history-tab.tab-humain.active { border-bottom-color: var(--gold); }
+.history-tab.tab-ia.active { border-bottom-color: var(--accent-lt); }
+.history-scroll {
+  flex: 1; overflow-y: auto; padding: 10px 14px;
+  scrollbar-width: thin; scrollbar-color: var(--border2) transparent;
+  max-height: calc(100vh - 180px);
+}
+.history-empty {
+  font-size: 11px; color: var(--text3);
+  font-style: italic; text-align: center; margin-top: 24px;
+}
+
+.player-row {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+}
+</style>
+</head>
+<body>
+<div class="game" id="jeu"></div>
+
+<script type="module">
+import * as moteur from './jeu.js';
+
+let partie = null;
+let ongletHist = 'tous'; // 'tous' | 'humain' | 'ia'
+
+// --- Rendu utilitaires --------------------------------------------------------
+
+function el(tag, attrs = {}, children = []) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k === 'onclick') e.onclick = v;
+    else if (k === 'dataset') Object.assign(e.dataset, v);
+    else if (k === 'disabled') { if (v) e.disabled = true; }
+    else if (v !== null && v !== undefined) e.setAttribute(k, v);
+  }
+  for (const c of [].concat(children)) {
+    if (c == null) continue;
+    e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return e;
+}
+
+function carteDOM(carte, taille = '') {
+  if (!carte) {
+    return el('div', { class: `card card-cachée ${taille}` });
+  }
+  const [v, c] = carte;
+  return el('div', { class: `card card-${c} ${taille}` }, [
+    el('div', { class: 'val' }, String(v)),
+    el('div', { class: 'coul' }, c),
+  ]);
+}
+
+// --- Actions du jeu (moteur local, pas de réseau) ----------------------------
+
+function nouvellePartie() {
+  partie = moteur.nouvellePartie();
+  rendre();
+  if (partie.tour === 'ia' && !partie.fini) setTimeout(tourIA, 900);
+}
+
+function poserQuestion(idx) {
+  try {
+    partie = moteur.poserQuestion(idx);
+    rendre();
+    if (partie.tour === 'ia' && !partie.fini) setTimeout(tourIA, 900);
+  } catch (e) { toast(e.message); }
+}
+
+function deviner(cartes) {
+  try {
+    partie = moteur.deviner(cartes);
+    rendre();
+  } catch (e) { toast(e.message); }
+}
+
+function tourIA() {
+  try {
+    const avantTerminée = partie.ia_terminée;
+    partie = moteur.tourIA();
+    rendre();
+    if (!avantTerminée && partie.ia_terminée) {
+      toast(partie.ia_correcte
+        ? 'L\'IA pense avoir trouvé votre main. À vous de finir.'
+        : 'L\'IA a tenté sa devinette et s\'est trompée. À vous.');
+    }
+    if (partie.tour === 'ia' && !partie.fini) setTimeout(tourIA, 900);
+  } catch (e) { toast(e.message); }
+}
+
+// --- Toast -------------------------------------------------------------------
+
+let toastTimer = null;
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = el('div', { class: 'toast' });
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), 3200);
+}
+
+// --- Modale de devinette -----------------------------------------------------
+
+function ouvrirModaleDevinette() {
+  const slots = [
+    { v: '', c: '' }, { v: '', c: '' }, { v: '', c: '' },
+    { v: '', c: '' }, { v: '', c: '' },
+  ];
+
+  const overlay = el('div', { class: 'modal-overlay' });
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  const modale = el('div', { class: 'modal' });
+  overlay.appendChild(modale);
+
+  function erreur(s) {
+    if (!s.v || !s.c) return null;
+    if (s.v === '5' && s.c !== 'V') return 'Le 5 est vert';
+    if (s.v !== '5' && s.c === 'V') return 'Seul le 5 est vert';
+    return null;
+  }
+
+  function majContraintesCouleur(select, v) {
+    select.innerHTML = '';
+    select.appendChild(new Option('Coul.', ''));
+    if (v !== '5') {
+      select.appendChild(new Option('N — Noir', 'N'));
+      select.appendChild(new Option('B — Blanc', 'B'));
+    }
+    select.appendChild(new Option('V — Vert', 'V'));
+  }
+
+  function redessiner() {
+    modale.innerHTML = '';
+    modale.appendChild(el('div', { class: 'modal-title' }, 'Deviner la main de l\'IA'));
+    modale.appendChild(el('div', { class: 'modal-subtitle' },
+      'Sélectionnez les 5 cartes de la main adverse. Le 5 n\'existe qu\'en vert.'));
+
+    const row = el('div', { style: 'display:flex;gap:8px;margin-bottom:16px;' });
+    const errs = slots.map(erreur);
+
+    slots.forEach((s, i) => {
+      const cls = 'guess-slot' + (errs[i] ? ' error' : (s.v && s.c ? ' active' : ''));
+      const slot = el('div', { class: cls });
+      slot.appendChild(el('label', {}, `Carte ${i + 1}`));
+
+      const preview = el('div', { style: 'height:44px;display:flex;align-items:center;justify-content:center;' });
+      if (s.v && s.c) preview.appendChild(carteDOM([parseInt(s.v), s.c], 'card-xs'));
+      else preview.appendChild(el('div', { style: 'width:36px;height:48px;border:1px dashed var(--border2);border-radius:5px;' }));
+      slot.appendChild(preview);
+
+      const selV = el('select');
+      selV.appendChild(new Option('Val.', ''));
+      for (let v = 0; v <= 9; v++) selV.appendChild(new Option(v, String(v)));
+      selV.value = s.v;
+      selV.onchange = () => {
+        s.v = selV.value;
+        if (s.v === '5') s.c = 'V';
+        else if (s.c === 'V') s.c = '';
+        redessiner();
+      };
+      slot.appendChild(selV);
+
+      const selC = el('select');
+      majContraintesCouleur(selC, s.v);
+      selC.value = s.c;
+      if (s.v === '5') selC.disabled = true;
+      selC.onchange = () => { s.c = selC.value; redessiner(); };
+      slot.appendChild(selC);
+
+      if (errs[i]) slot.appendChild(el('div', { class: 'constraint-error' }, errs[i]));
+      row.appendChild(slot);
+    });
+    modale.appendChild(row);
+
+    const ok = slots.every(s => s.v && s.c) && errs.every(e => !e);
+    const boutons = el('div', { style: 'display:flex;gap:10px;margin-top:20px;justify-content:flex-end;' });
+    boutons.appendChild(el('button', {
+      class: 'btn btn-ghost',
+      onclick: () => overlay.remove(),
+    }, 'Annuler'));
+    const btnOk = el('button', {
+      class: 'btn btn-primary',
+      onclick: () => {
+        overlay.remove();
+        deviner(slots.map(s => [parseInt(s.v), s.c]));
+      },
+    }, '✦ Confirmer');
+    if (!ok) btnOk.disabled = true;
+    boutons.appendChild(btnOk);
+    modale.appendChild(boutons);
+  }
+
+  redessiner();
+  document.body.appendChild(overlay);
+}
+
+// --- Fin de partie -----------------------------------------------------------
+
+function afficherFin() {
+  const gagne = partie.gagnant === 'humain';
+  const trouvé = partie.humain_correct === true;
+  const overlay = el('div', { class: 'endgame' });
+
+  // Titre : bravo si on a trouvé (même si devancé par l'IA).
+  let titre, cls;
+  if (gagne) { titre = '✦ Bravo !'; cls = 'win'; }
+  else if (trouvé) { titre = '✦ Bravo quand même !'; cls = 'win'; }
+  else { titre = '✗ Perdu'; cls = 'lose'; }
+  overlay.appendChild(el('div', { class: 'endgame-title ' + cls }, titre));
+
+  let sousTitre;
+  if (gagne) {
+    sousTitre = 'Vous avez deviné la main de l\'IA.';
+  } else if (trouvé) {
+    sousTitre = 'Vous avez trouvé la bonne main, mais l\'IA vous a devancé.';
+  } else {
+    sousTitre = 'Votre devinette n\'était pas la bonne.';
+  }
+  overlay.appendChild(el('div', { class: 'endgame-subtitle' }, sousTitre));
+
+  if (partie.main_ia) {
+    const bloc = el('div');
+    bloc.appendChild(el('div', {
+      style: 'font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:12px;text-align:center;',
+    }, 'Main de l\'IA révélée'));
+    const rangée = el('div', { style: 'display:flex;gap:12px;justify-content:center;' });
+    partie.main_ia.forEach(c => rangée.appendChild(carteDOM(c)));
+    bloc.appendChild(rangée);
+    overlay.appendChild(bloc);
+  }
+
+  overlay.appendChild(el('button', {
+    class: 'btn btn-primary',
+    onclick: () => { overlay.remove(); nouvellePartie(); },
+    style: 'margin-top:8px;',
+  }, '↺ Rejouer'));
+
+  document.body.appendChild(overlay);
+}
+
+// --- Rendu principal ---------------------------------------------------------
+
+function rendre() {
+  const root = document.getElementById('jeu');
+  root.innerHTML = '';
+
+  // Header
+  const header = el('div', { class: 'header' });
+  header.appendChild(el('div', { class: 'logo' }, [
+    document.createTextNode('Casse '),
+    el('span', {}, 'le'),
+    document.createTextNode(' Code'),
+  ]));
+  const droite = el('div', { style: 'display:flex;gap:12px;align-items:center;' });
+  const badgeCls = 'turn-badge ' + (partie.tour === 'humain' ? 'humain' : 'ia');
+  let textBadge;
+  if (partie.tour === 'humain' && partie.ia_terminée) textBadge = 'À vous — l\'IA a fini';
+  else if (partie.tour === 'humain') textBadge = 'Votre tour';
+  else textBadge = 'Tour de l\'IA…';
+  droite.appendChild(el('div', { class: badgeCls }, [
+    el('div', { class: 'turn-dot' }),
+    textBadge,
+  ]));
+  droite.appendChild(el('button', {
+    class: 'btn btn-ghost',
+    onclick: nouvellePartie,
+    style: 'font-size:10px;padding:5px 12px;',
+  }, '↺ Nouvelle partie'));
+  header.appendChild(droite);
+  root.appendChild(header);
+
+  // Zone IA
+  const iaZone = el('div', { class: 'ia-zone' });
+  const labelTexte = partie.ia_terminée ? 'Main de l\'IA — cachée (IA a tenté sa devinette)' : 'Main de l\'IA — cachée';
+  const labelIA = el('div', { class: 'zone-label' }, labelTexte);
+  iaZone.appendChild(labelIA);
+  const rangéeIA = el('div', { class: 'cartes-rangée' });
+  for (let i = 0; i < partie.taille_main_ia; i++) rangéeIA.appendChild(carteDOM(null));
+  iaZone.appendChild(rangéeIA);
+  root.appendChild(iaZone);
+
+  // Centre (questions)
+  const centreZone = el('div', { class: 'center-zone' });
+  const labelC = el('div', { class: 'zone-label' }, 'Questions disponibles');
+  labelC.appendChild(el('span', { class: 'stat' }, `  Pioche : ${partie.taille_pioche}`));
+  centreZone.appendChild(labelC);
+  const grid = el('div', { class: 'questions-grid' });
+  partie.centre.forEach((nom, i) => {
+    const cls = 'qcard' + ((partie.tour !== 'humain' || partie.fini) ? ' disabled' : '');
+    grid.appendChild(el('div', {
+      class: cls,
+      onclick: () => poserQuestion(i),
+    }, nom));
+  });
+  centreZone.appendChild(grid);
+  root.appendChild(centreZone);
+
+  // Zone joueur
+  const pZone = el('div', { class: 'player-zone' });
+  const labelP = el('div', { class: 'zone-label' }, 'Votre main');
+  labelP.appendChild(el('span', { class: 'stat' },
+    `  Candidats : ${partie.candidats_humain}`));
+  pZone.appendChild(labelP);
+  const row = el('div', { class: 'player-row' });
+  const mesCartes = el('div', { class: 'cartes-rangée' });
+  partie.main_humain.forEach(c => mesCartes.appendChild(carteDOM(c)));
+  row.appendChild(mesCartes);
+  row.appendChild(el('button', {
+    class: 'btn btn-primary',
+    onclick: ouvrirModaleDevinette,
+    disabled: partie.tour !== 'humain' || partie.fini,
+  }, '✦ Deviner la main adverse'));
+  pZone.appendChild(row);
+  root.appendChild(pZone);
+
+  // Historique
+  const hZone = el('div', { class: 'history-zone' });
+  const nbHumain = partie.historique.filter(h => h.qui === 'humain').length;
+  const nbIA = partie.historique.filter(h => h.qui === 'ia').length;
+  hZone.appendChild(el('div', { class: 'history-header' },
+    `Historique — ${partie.historique.length} tour${partie.historique.length !== 1 ? 's' : ''}`));
+
+  const tabs = el('div', { class: 'history-tabs' });
+  [
+    ['tous', `Tous (${partie.historique.length})`, ''],
+    ['humain', `Vous (${nbHumain})`, 'tab-humain'],
+    ['ia', `IA (${nbIA})`, 'tab-ia'],
+  ].forEach(([id, label, cls]) => {
+    const btn = el('button', {
+      class: 'history-tab ' + cls + (ongletHist === id ? ' active' : ''),
+      onclick: () => { ongletHist = id; rendre(); },
+    }, label);
+    tabs.appendChild(btn);
+  });
+  hZone.appendChild(tabs);
+
+  const filtrés = ongletHist === 'tous'
+    ? partie.historique
+    : partie.historique.filter(h => h.qui === ongletHist);
+
+  const scroll = el('div', { class: 'history-scroll' });
+  if (filtrés.length === 0) {
+    scroll.appendChild(el('div', { class: 'history-empty' },
+      partie.historique.length === 0 ? 'Aucune question posée' : 'Rien dans cet onglet'));
+  } else {
+    filtrés.forEach(h => {
+      const item = el('div', { class: 'hist-item ' + h.qui });
+      item.appendChild(el('div', { class: 'hist-qui' }, h.qui === 'humain' ? 'Vous' : 'IA'));
+      item.appendChild(el('div', { class: 'hist-q' }, h.question));
+      item.appendChild(el('div', { class: 'hist-r' }, '→ ' + h.réponse));
+      if (h.entropie !== undefined) {
+        item.appendChild(el('div', { class: 'hist-h' },
+          `H = ${h.entropie.toFixed(2)} bits`));
+      }
+      scroll.appendChild(item);
+    });
+  }
+  hZone.appendChild(scroll);
+  setTimeout(() => { scroll.scrollTop = scroll.scrollHeight; }, 0);
+  root.appendChild(hZone);
+
+  if (partie.fini) setTimeout(afficherFin, 400);
+}
+
+// Démarrage
+nouvellePartie();
+</script>
+</body>
+</html>
