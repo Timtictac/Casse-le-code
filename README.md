@@ -21,15 +21,3 @@ python3 -m http.server 8000
 
 puis ouvrir `http://localhost:8000`.
 
-## Déployer sur Cloudflare Pages depuis GitHub
-
-1. Pousser ce dossier (ou tout le repo) sur GitHub.
-2. Sur le dashboard Cloudflare, *Workers & Pages* → *Create application* →
-   *Pages* → *Connect to Git*.
-3. Choisir le repo. Régler :
-   - **Framework preset** : *None*
-   - **Build command** : *(laisser vide)*
-   - **Build output directory** : `web` (ou `/` si tu mets les fichiers à la racine)
-4. *Save and Deploy*. À chaque `git push`, Pages redéploie automatiquement.
-
-Aucun build, aucune dépendance, aucun runtime serveur.
