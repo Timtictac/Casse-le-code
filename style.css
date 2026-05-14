@@ -170,6 +170,129 @@ body::before {
   border-radius: 4px; border: 1px solid rgba(155,58,42,.3);
 }
 
+/* Modale d'astuces (tutoriels) */
+.astuce-modal {
+  width: 820px; max-width: 96vw;
+  display: flex; flex-direction: column;
+  max-height: 88vh; padding: 0;
+}
+.astuce-header {
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.astuce-header .modal-title { margin-bottom: 2px; }
+.astuce-tabs {
+  display: flex; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+.astuce-tab {
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--text3); background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color .12s, border-color .12s, background .12s;
+}
+.astuce-tab:hover { color: var(--text2); background: var(--bg2); }
+.astuce-tab.active {
+  color: var(--text); border-bottom-color: var(--gold);
+  background: var(--bg2);
+}
+.astuce-body {
+  padding: 22px 28px 26px;
+  overflow-y: auto;
+  font-size: 14px; line-height: 1.6;
+  color: var(--text);
+}
+.astuce-body h1 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 22px; margin-bottom: 14px;
+  color: var(--gold-lt);
+}
+.astuce-body h2 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 16px; margin: 22px 0 8px;
+  color: var(--text);
+}
+.astuce-body h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em;
+  margin: 16px 0 6px;
+  color: var(--gold);
+}
+.astuce-body p { margin: 8px 0; }
+.astuce-body ul, .astuce-body ol { margin: 8px 0 8px 22px; }
+.astuce-body li { margin: 4px 0; }
+.astuce-body code {
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  background: var(--bg3); color: var(--gold-lt);
+  padding: 1px 6px; border-radius: 3px;
+  border: 1px solid var(--border);
+}
+.astuce-body pre {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 14px;
+  margin: 12px 0; overflow-x: auto;
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  color: var(--text);
+}
+.astuce-body pre code {
+  background: none; border: none; padding: 0; color: inherit;
+}
+.astuce-body strong { color: var(--gold-lt); font-weight: 600; }
+.astuce-body em { color: var(--text2); font-style: italic; }
+.astuce-body table {
+  border-collapse: collapse; margin: 12px 0;
+  font-size: 13px;
+}
+.astuce-body th, .astuce-body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  text-align: left;
+}
+.astuce-body th {
+  background: var(--bg3);
+  font-weight: 600; color: var(--text);
+}
+.astuce-body .tex-inline { display: inline-block; }
+.astuce-body .tex-block {
+  display: block; margin: 14px 0;
+  text-align: center; overflow-x: auto;
+}
+.astuce-body .card-inline {
+  display: inline-flex; vertical-align: middle;
+  margin: 0 2px;
+}
+.astuce-body .card-inline .card {
+  width: 28px; height: 38px; border-radius: 4px;
+}
+.astuce-body .card-inline .card .val { font-size: 0.85em; }
+.astuce-body .card-inline .card .coul { display: none; }
+.astuce-empty {
+  font-style: italic; color: var(--text3);
+  text-align: center; padding: 24px;
+}
+.astuce-error {
+  color: var(--red-lt); padding: 12px;
+  background: rgba(155,58,42,.1);
+  border: 1px solid rgba(155,58,42,.3);
+  border-radius: 6px;
+}
+
+@media (max-width: 720px) {
+  .astuce-modal { max-height: 92vh; }
+  .astuce-header { padding: 14px 16px 10px; }
+  .astuce-body { padding: 16px 18px 20px; font-size: 13px; }
+  .astuce-tab { padding: 8px 10px; font-size: 10px; }
+  .astuce-body h1 { font-size: 18px; }
+  .astuce-body h2 { font-size: 15px; }
+  .astuce-body table { font-size: 12px; }
+  .astuce-body th, .astuce-body td { padding: 4px 8px; }
+}
+
 /* Fin de partie */
 .endgame {
   position: fixed; inset: 0;

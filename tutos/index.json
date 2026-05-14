@@ -1,0 +1,6 @@
+[
+  { "id": "construire-code",      "titre": "Niveau 0 — Construire un code possible" },
+  { "id": "lister-sommes",        "titre": "Lister les combinaisons d'une somme" },
+  { "id": "parite-via-somme",     "titre": "Déduire la parité depuis une somme" },
+  { "id": "voisinage-parite",     "titre": "Lire la carte « voisinage de parité »" }
+]

@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="game" id="jeu"></div>
@@ -190,6 +192,268 @@ function ouvrirModaleDevinette() {
   document.body.appendChild(overlay);
 }
 
+// --- Astuces (tutoriels Markdown) --------------------------------------------
+
+let tutosManifest = null;
+const tutosCache = new Map(); // id -> texte md
+let astuceOngletActif = null;
+
+async function chargerManifesteTutos() {
+  if (tutosManifest) return tutosManifest;
+  const r = await fetch('./tutos/index.json');
+  tutosManifest = await r.json();
+  return tutosManifest;
+}
+
+async function chargerTuto(id) {
+  if (tutosCache.has(id)) return tutosCache.get(id);
+  const r = await fetch(`./tutos/${id}.md`);
+  if (!r.ok) throw new Error(`Tuto introuvable : ${id}`);
+  const txt = await r.text();
+  tutosCache.set(id, txt);
+  return txt;
+}
+
+// Échappe le HTML (sécurité de base avant rendu).
+function escHTML(s) {
+  return s.replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[ch]);
+}
+
+// Remplace \5V \4N \3B par une carte connue, \? par une carte mystère (dos).
+// Retourne du HTML (le contenu autour est déjà échappé).
+function remplacerCartes(html) {
+  html = html.replace(/\\\?/g, () =>
+    `<span class="card-inline" data-carte="?"></span>`);
+  return html.replace(/\\(\d)([NBV])/g, (_, v, c) =>
+    `<span class="card-inline" data-carte="${v}${c}"></span>`);
+}
+
+// Mini-parser Markdown : titres, paragraphes, listes, gras/italique, code, tables, LaTeX.
+function rendreMD(md) {
+  const lignes = md.replace(/\r\n/g, '\n').split('\n');
+  const out = [];
+  let i = 0;
+
+  // On extrait d'abord les formules $...$ et $$...$$ avant l'échappement HTML,
+  // sinon escHTML transformerait $a < b$ en $a &lt; b$.
+  const formules = [];
+  const stash = (tex, mode) => {
+    formules.push({ tex, mode });
+    return ` FORMULE${formules.length - 1} `;
+  };
+
+  const inline = (s) => {
+    s = s.replace(/\$\$([^$]+?)\$\$/g, (_, tex) => stash(tex, 'block'));
+    s = s.replace(/(?<!\\)\$([^$\n]+?)(?<!\\)\$/g, (_, tex) => stash(tex, 'inline'));
+    s = escHTML(s);
+    s = s.replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`);
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    s = remplacerCartes(s);
+    s = s.replace(/ FORMULE(\d+) /g, (_, n) => {
+      const f = formules[+n];
+      const cls = f.mode === 'block' ? 'tex-block' : 'tex-inline';
+      return `<span class="${cls}" data-tex="${escHTML(f.tex)}" data-mode="${f.mode}"></span>`;
+    });
+    return s;
+  };
+
+  while (i < lignes.length) {
+    const l = lignes[i];
+
+    // Bloc LaTeX $$ ... $$ multi-lignes
+    if (l.trim().startsWith('$$')) {
+      const buf = [];
+      let première = l.trim().slice(2);
+      // Cas $$...$$  sur la même ligne
+      if (première.endsWith('$$')) {
+        out.push(`<div class="tex-block" data-tex="${escHTML(première.slice(0, -2))}" data-mode="block"></div>`);
+        i++;
+        continue;
+      }
+      if (première) buf.push(première);
+      i++;
+      while (i < lignes.length && !lignes[i].trim().endsWith('$$')) {
+        buf.push(lignes[i]);
+        i++;
+      }
+      if (i < lignes.length) {
+        const dernière = lignes[i].trim().slice(0, -2);
+        if (dernière) buf.push(dernière);
+        i++;
+      }
+      out.push(`<div class="tex-block" data-tex="${escHTML(buf.join('\n'))}" data-mode="block"></div>`);
+      continue;
+    }
+
+    // Bloc de code ```
+    if (l.startsWith('```')) {
+      const buf = [];
+      i++;
+      while (i < lignes.length && !lignes[i].startsWith('```')) {
+        buf.push(escHTML(lignes[i]));
+        i++;
+      }
+      i++;
+      out.push(`<pre><code>${buf.join('\n')}</code></pre>`);
+      continue;
+    }
+
+    // Titres
+    if (l.startsWith('### ')) { out.push(`<h3>${inline(l.slice(4))}</h3>`); i++; continue; }
+    if (l.startsWith('## '))  { out.push(`<h2>${inline(l.slice(3))}</h2>`); i++; continue; }
+    if (l.startsWith('# '))   { out.push(`<h1>${inline(l.slice(2))}</h1>`); i++; continue; }
+
+    // Tableau (ligne avec | et ligne suivante de séparateurs)
+    if (l.includes('|') && i + 1 < lignes.length && /^\s*\|?[\s\-:|]+\|?\s*$/.test(lignes[i + 1]) && lignes[i + 1].includes('-')) {
+      const headers = l.split('|').map(s => s.trim()).filter(Boolean);
+      i += 2;
+      const rows = [];
+      while (i < lignes.length && lignes[i].includes('|') && lignes[i].trim()) {
+        rows.push(lignes[i].split('|').map(s => s.trim()).filter(Boolean));
+        i++;
+      }
+      let html = '<table><thead><tr>';
+      headers.forEach(h => html += `<th>${inline(h)}</th>`);
+      html += '</tr></thead><tbody>';
+      rows.forEach(r => {
+        html += '<tr>';
+        r.forEach(c => html += `<td>${inline(c)}</td>`);
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      out.push(html);
+      continue;
+    }
+
+    // Liste à puces
+    if (/^\s*[-*]\s+/.test(l)) {
+      const items = [];
+      while (i < lignes.length && /^\s*[-*]\s+/.test(lignes[i])) {
+        items.push(inline(lignes[i].replace(/^\s*[-*]\s+/, '')));
+        i++;
+      }
+      out.push('<ul>' + items.map(it => `<li>${it}</li>`).join('') + '</ul>');
+      continue;
+    }
+
+    // Liste numérotée
+    if (/^\s*\d+\.\s+/.test(l)) {
+      const items = [];
+      while (i < lignes.length && /^\s*\d+\.\s+/.test(lignes[i])) {
+        items.push(inline(lignes[i].replace(/^\s*\d+\.\s+/, '')));
+        i++;
+      }
+      out.push('<ol>' + items.map(it => `<li>${it}</li>`).join('') + '</ol>');
+      continue;
+    }
+
+    // Ligne vide
+    if (!l.trim()) { i++; continue; }
+
+    // Paragraphe (lignes consécutives jusqu'à une vide ou un bloc spécial)
+    const para = [];
+    while (i < lignes.length && lignes[i].trim()
+           && !lignes[i].startsWith('#') && !lignes[i].startsWith('```')
+           && !/^\s*[-*]\s+/.test(lignes[i]) && !/^\s*\d+\.\s+/.test(lignes[i])) {
+      para.push(lignes[i]);
+      i++;
+    }
+    out.push(`<p>${inline(para.join(' '))}</p>`);
+  }
+
+  return out.join('\n');
+}
+
+// Après injection HTML, remplit les .card-inline par le DOM de carte.
+function injecterCartesInline(racine) {
+  racine.querySelectorAll('.card-inline').forEach(span => {
+    const code = span.dataset.carte;
+    if (!code) return;
+    span.innerHTML = '';
+    if (code === '?') {
+      span.appendChild(carteDOM(null));
+    } else {
+      span.appendChild(carteDOM([parseInt(code[0]), code[1]]));
+    }
+  });
+}
+
+// Rend les formules LaTeX (.tex-inline / .tex-block) avec KaTeX.
+function injecterFormules(racine) {
+  if (typeof katex === 'undefined') return;
+  racine.querySelectorAll('.tex-inline, .tex-block').forEach(node => {
+    const tex = node.dataset.tex;
+    const displayMode = node.dataset.mode === 'block';
+    try {
+      katex.render(tex, node, { displayMode, throwOnError: false });
+    } catch (e) {
+      node.textContent = tex;
+    }
+  });
+}
+
+async function ouvrirAstuces() {
+  const overlay = el('div', { class: 'modal-overlay' });
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  const modale = el('div', { class: 'modal astuce-modal' });
+  overlay.appendChild(modale);
+
+  const header = el('div', { class: 'astuce-header' });
+  header.appendChild(el('div', { class: 'modal-title' }, 'Astuces & tutoriels'));
+  header.appendChild(el('div', { class: 'modal-subtitle' },
+    'Quelques techniques pour mieux jouer — du plus basique au plus subtil.'));
+  modale.appendChild(header);
+
+  const tabsBar = el('div', { class: 'astuce-tabs' });
+  const body = el('div', { class: 'astuce-body' });
+  modale.appendChild(tabsBar);
+  modale.appendChild(body);
+
+  document.body.appendChild(overlay);
+
+  let manifest;
+  try {
+    manifest = await chargerManifesteTutos();
+  } catch (e) {
+    body.innerHTML = '<div class="astuce-error">Impossible de charger les tutoriels. Servez la page via un serveur HTTP (pas en file://).</div>';
+    return;
+  }
+
+  if (astuceOngletActif === null || !manifest.find(t => t.id === astuceOngletActif)) {
+    astuceOngletActif = manifest[0].id;
+  }
+
+  function dessinerOnglets() {
+    tabsBar.innerHTML = '';
+    manifest.forEach(t => {
+      const btn = el('button', {
+        class: 'astuce-tab' + (t.id === astuceOngletActif ? ' active' : ''),
+        onclick: () => { astuceOngletActif = t.id; dessinerOnglets(); chargerEtAfficher(t.id); },
+      }, t.titre);
+      tabsBar.appendChild(btn);
+    });
+  }
+
+  async function chargerEtAfficher(id) {
+    body.innerHTML = '<div class="astuce-empty">Chargement…</div>';
+    try {
+      const md = await chargerTuto(id);
+      body.innerHTML = rendreMD(md);
+      injecterCartesInline(body);
+      injecterFormules(body);
+      body.scrollTop = 0;
+    } catch (e) {
+      body.innerHTML = `<div class="astuce-error">${escHTML(e.message)}</div>`;
+    }
+  }
+
+  dessinerOnglets();
+  chargerEtAfficher(astuceOngletActif);
+}
+
 // --- Fin de partie -----------------------------------------------------------
 
 function afficherFin() {
@@ -257,6 +521,11 @@ function rendre() {
     el('div', { class: 'turn-dot' }),
     textBadge,
   ]));
+  droite.appendChild(el('button', {
+    class: 'btn btn-ghost',
+    onclick: ouvrirAstuces,
+    style: 'font-size:10px;padding:5px 12px;',
+  }, '✦ Astuce'));
   droite.appendChild(el('button', {
     class: 'btn btn-ghost',
     onclick: nouvellePartie,
