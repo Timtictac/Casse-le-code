@@ -108,19 +108,19 @@ const qAdjacence = (relation) => (main) => {
 // --- Catalogue ---------------------------------------------------------------
 
 export const questions = [
-  ['Σ noires',              qSomme((c) => estNoire(c))],
-  ['Σ blanches',            qSomme((c) => estBlanche(c))],
-  ['Σ 3 premières',         qSomme((_, i) => i + 1 <= 3)],
-  ['Σ 3 centrales',         qSomme((_, i) => 2 <= i + 1 && i + 1 <= 4)],
-  ['Σ 3 dernières',         qSomme((_, i) => i + 1 >= 3)],
-  ['Σ totale',              qSomme(() => true)],
-  ['Δ max−min',             qDiff()],
-  ['Δ max−min noires',      qDiff(estNoire)],
-  ['Δ max−min blanches',    qDiff(estBlanche)],
-  ['Adj. valeurs suivies',  qAdjacence((a, b) => a[0] + 1 === b[0])],
-  ['Adj. même couleur',     qAdjacence((a, b) => a[1] === b[1])],
-  ['Adj. même parité',      qAdjacence((a, b) => a[0] % 2 === b[0] % 2)],
-  ['Adj. parité & couleur', qAdjacence((a, b) => a[0] % 2 === b[0] % 2 && a[1] === b[1])],
+  ['Somme des cartes noires',                     qSomme((c) => estNoire(c))],
+  ['Somme des cartes blanches',                   qSomme((c) => estBlanche(c))],
+  ['Somme des 3 cartes de gauche',                qSomme((_, i) => i + 1 <= 3)],
+  ['Somme des 3 cartes du milieu',                qSomme((_, i) => 2 <= i + 1 && i + 1 <= 4)],
+  ['Somme des 3 cartes de droite',                qSomme((_, i) => i + 1 >= 3)],
+  ['Somme de toutes les cartes',                  qSomme(() => true)],
+  ['Écart entre la plus grande et la plus petite carte', qDiff()],
+  ['Écart entre la plus grande et la plus petite carte noire',   qDiff(estNoire)],
+  ['Écart entre la plus grande et la plus petite carte blanche', qDiff(estBlanche)],
+  ['Quelles cartes voisines se suivent (ex. 3 puis 4) ?',        qAdjacence((a, b) => a[0] + 1 === b[0])],
+  ['Quelles cartes voisines ont la même couleur ?',              qAdjacence((a, b) => a[1] === b[1])],
+  ['Quelles cartes voisines sont toutes deux paires ou impaires ?', qAdjacence((a, b) => a[0] % 2 === b[0] % 2)],
+  ['Quelles cartes voisines ont même parité ET même couleur ?',  qAdjacence((a, b) => a[0] % 2 === b[0] % 2 && a[1] === b[1])],
 ];
 
 // --- Entropie sur un sous-ensemble de mains ----------------------------------
