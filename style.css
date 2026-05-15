@@ -177,10 +177,22 @@ body::before {
   max-height: 88vh; padding: 0;
 }
 .astuce-header {
-  padding: 20px 24px 12px;
+  position: relative;
+  padding: 20px 48px 12px 24px;
   border-bottom: 1px solid var(--border);
 }
 .astuce-header .modal-title { margin-bottom: 2px; }
+.astuce-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--text3);
+  border: 1px solid var(--border2); border-radius: 6px;
+  font-size: 20px; line-height: 1; cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.astuce-close:hover { color: var(--text); border-color: var(--text2); background: var(--bg3); }
 .astuce-tabs {
   display: flex; flex-wrap: wrap;
   border-bottom: 1px solid var(--border);

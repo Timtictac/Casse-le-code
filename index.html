@@ -405,6 +405,11 @@ async function ouvrirAstuces() {
   header.appendChild(el('div', { class: 'modal-title' }, 'Astuces & tutoriels'));
   header.appendChild(el('div', { class: 'modal-subtitle' },
     'Quelques techniques pour mieux jouer — du plus basique au plus subtil.'));
+  header.appendChild(el('button', {
+    class: 'astuce-close',
+    'aria-label': 'Fermer',
+    onclick: () => overlay.remove(),
+  }, '×'));
   modale.appendChild(header);
 
   const tabsBar = el('div', { class: 'astuce-tabs' });
