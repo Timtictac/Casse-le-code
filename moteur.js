@@ -119,7 +119,6 @@ export const questions = [
   ['Écart entre la plus grande et la plus petite carte blanche', qDiff(estBlanche)],
   ['Quelles cartes voisines se suivent (ex. 3 puis 4) ?',        qAdjacence((a, b) => a[0] + 1 === b[0])],
   ['Quelles cartes voisines ont la même couleur ?',              qAdjacence((a, b) => a[1] === b[1])],
-  ['Quelles cartes voisines sont toutes deux paires ou impaires ?', qAdjacence((a, b) => a[0] % 2 === b[0] % 2)],
   ['Quelles cartes voisines ont même parité ET même couleur ?',  qAdjacence((a, b) => a[0] % 2 === b[0] % 2 && a[1] === b[1])],
 ];
 
